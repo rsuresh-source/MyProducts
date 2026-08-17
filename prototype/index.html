@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>myProducts — SDD Step 2 Prototype</title>
+  <!-- Zero external dependencies: system font stack + vanilla CSS/JS only -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- ================================================================
+       DEVICE FRAME
+       Simulates a mobile viewport (max-width 412px) with iOS-style
+       chrome. The shell wraps all screens, the tab bar, and the toast.
+       ================================================================ -->
+  <div class="device-shell" id="device-shell">
+
+    <!-- ============ STATUS BAR (iOS-style dynamic island) ============ -->
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="dynamic-island"></div>
+      <div class="status-icons">
+        <span>5G</span>
+        <!-- Battery icon (inline SVG, no deps) -->
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="0.6" y="0.6" width="13" height="9.8" rx="2.5" />
+          <path d="M15 3.5v4" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         APP VIEWPORT
+         Routes between screens via .active class toggling in app.js.
+         Each <section> is a "screen" that maps to a React Navigation
+         destination in the final Step 3/4 implementation.
+         ============================================================ -->
+    <div class="app-viewport">
+
+      <!-- ======================= SCREEN: LOGIN =======================
+           Maps to: AuthStackNavigator → LoginScreen.tsx
+           Redux slice: authSlice (loginUser thunk)
+           Features: credential inputs, demo auto-fill, validation,
+                     loading spinner, inline error feedback.
+           ========================================================== -->
+      <section id="screen-login" class="screen active">
+        <div class="login-content">
+
+          <!-- Brand header: navy monogram tile + myProducts wordmark -->
+          <div class="brand-header">
+            <div class="brand-icon">
+              <span class="brand-monogram">mP</span>
+            </div>
+            <h1 class="brand-title">myProducts</h1>
+            <p class="brand-subtitle">Welcome back! Log in to continue.</p>
+          </div>
+
+          <!-- Floating white card with credential form -->
+          <div class="login-card">
+            <h2 class="card-heading">Sign In</h2>
+
+            <form id="login-form" novalidate>
+              <!-- Username field with validation error slot -->
+              <div class="form-group">
+                <label class="form-label" for="username-input">Username</label>
+                <input type="text" id="username-input" class="form-input" placeholder="Enter username (e.g. emilys)"
+                  autocomplete="username">
+                <div id="username-error" class="error-text"></div>
+              </div>
+
+              <!-- Password field with validation error slot -->
+              <div class="form-group">
+                <label class="form-label" for="password-input">Password</label>
+                <input type="password" id="password-input" class="form-input" placeholder="Enter password"
+                  autocomplete="current-password">
+                <div id="password-error" class="error-text"></div>
+              </div>
+
+              <!-- Demo quick-fill helper: populates emilys / emilyspass -->
+              <button type="button" class="demo-link" onclick="fillDemoCreds()">
+                ⚡ Auto-fill demo credentials (emilys)
+              </button>
+
+              <!-- Primary CTA: full-width dark navy Sign In button -->
+              <button type="submit" id="login-btn" class="btn-primary">
+                Sign In
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= SCREEN: HOME (CATALOG GRID) ==========
+           Maps to: HomeTab (HomeStackNavigator) → HomeScreen.tsx
+           Redux slice: productSlice (fetchProducts thunk)
+           Features: personalized greeting, 2-column product grid,
+                     category badges, ratings, discount pills, logout.
+           ========================================================== -->
+      <section id="screen-home" class="screen">
+        <!-- Sticky header with greeting and quick logout -->
+        <header class="home-header">
+          <div class="home-title-row">
+            <div>
+              <h1 class="home-title">Explore Products</h1>
+              <p class="home-greeting">
+                Hello, <span id="home-user-name">Emily</span>
+              </p>
+            </div>
+            <!-- Secondary outline logout button (header action) -->
+            <button class="btn-outline" onclick="logout()">Logout</button>
+          </div>
+        </header>
+
+        <!-- 2-column product grid: rendered dynamically by app.js -->
+        <div id="products-grid" class="products-grid"></div>
+      </section>
+
+      <!-- ======================= SCREEN: PRODUCT DETAIL ===============
+           Maps to: HomeTab → DetailScreen.tsx (stack push)
+           Redux slice: productSlice (fetchProductById thunk)
+           Features: hero image, brand/rating, price/savings pill,
+                     description, sticky "Add to Cart" footer bar.
+           ========================================================== -->
+      <section id="screen-detail" class="screen">
+        <!-- Top nav bar: back pill + truncated product title -->
+        <div class="detail-nav">
+          <button class="back-btn" onclick="goBack()">← Back</button>
+          <span id="detail-nav-title" class="detail-nav-title">Product</span>
+        </div>
+
+        <!-- Full-width hero image with floating category badge -->
+        <div class="detail-hero-wrap">
+          <img id="detail-hero" class="detail-hero" alt="Product image" onerror="handleImgError(this)">
+          <span id="detail-category" class="detail-hero-badge">BEAUTY</span>
+        </div>
+
+        <!-- Product info body: brand, rating, title, price, description -->
+        <div class="detail-body">
+          <!-- Brand uppercase subheader + gold rating badge -->
+          <div class="detail-brand-row">
+            <span id="detail-brand" class="brand-name">ESSENCE</span>
+            <span class="rating-badge">
+              <span class="rating-stars">★</span>
+              <span id="detail-rating">4.9</span> / 5.0
+            </span>
+          </div>
+
+          <h1 id="detail-title" class="detail-title">Product Title</h1>
+
+          <!-- Price + green savings pill -->
+          <div class="price-line">
+            <span id="detail-price" class="detail-price">$9.99</span>
+            <span id="detail-save" class="save-pill">Save 7%</span>
+          </div>
+
+          <h2 class="section-title">Description</h2>
+          <p id="detail-desc" class="detail-desc">
+            Product description appears here.
+          </p>
+        </div>
+
+        <!-- Sticky bottom action bar: total price + Add to Cart CTA -->
+        <div class="buy-bar">
+          <div class="buy-total">
+            <span class="footer-total-label">Total</span>
+            <span id="buy-total" class="footer-total-value">$9.99</span>
+          </div>
+          <button id="add-cart-btn" class="btn-primary" onclick="handleAddToCart()">
+            Add to Cart
+          </button>
+        </div>
+      </section>
+
+      <!-- ======================= SCREEN: CART ==========================
+           Maps to: CartTab → CartScreen.tsx
+           Redux slice: cartSlice (addToCart, removeFromCart, updateQuantity)
+           Features: item list with thumbnails, quantity stepper, remove,
+                     empty state placeholder, sticky total + Checkout bar.
+           ========================================================== -->
+      <section id="screen-cart" class="screen">
+        <!-- Page header with title and item count -->
+        <header class="page-header">
+          <h1 class="page-title">My Cart</h1>
+          <p class="page-subtitle">
+            <span id="cart-count">0</span> Items
+          </p>
+        </header>
+
+        <!-- Cart line items: rendered dynamically by app.js -->
+        <div id="cart-list" class="cart-list"></div>
+
+        <!-- Empty state: shown when cart has no items -->
+        <div id="cart-empty" class="empty-state hidden">
+          <!-- Shopping bag SVG icon (inline, no deps) -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5">
+            <path d="M6 7h12l1.5 12h-15z" />
+            <path d="M9 10V7a3 3 0 0 1 6 0v3" />
+          </svg>
+          <h2 class="empty-title">Your Cart is Empty</h2>
+          <p class="empty-sub">Browse the catalog and add your first item.</p>
+          <button class="btn-primary" onclick="switchTab('home')">
+            Start Shopping
+          </button>
+        </div>
+
+        <!-- Sticky order summary footer: total + Checkout CTA -->
+        <div id="cart-footer" class="cart-footer">
+          <div class="footer-total">
+            <span class="footer-total-label">Total</span>
+            <span id="cart-total" class="footer-total-value">$0.00</span>
+          </div>
+          <button class="btn-primary" onclick="checkout()">Checkout</button>
+        </div>
+      </section>
+
+      <!-- ======================= SCREEN: PROFILE =======================
+           Maps to: ProfileTab → ProfileScreen.tsx
+           Redux slice: authSlice (reads user, dispatches logout)
+           Features: circular avatar, name/handle, grouped detail rows
+                     (username, email, masked password with toggle, gender),
+                     red destructive logout button.
+           ========================================================== -->
+      <section id="screen-profile" class="screen">
+        <!-- Page header -->
+        <header class="page-header">
+          <h1 class="page-title">My Profile</h1>
+          <p class="page-subtitle">Manage your account information</p>
+        </header>
+
+        <!-- User identity card: avatar + full name + @handle -->
+        <div class="profile-card">
+          <img id="profile-avatar" class="profile-avatar" alt="User avatar" onerror="handleImgError(this)">
+          <h2 id="profile-name" class="profile-name">Emily Johnson</h2>
+          <p id="profile-handle" class="profile-handle">@emilys</p>
+        </div>
+
+        <!-- Account details grouped list (rounded card with icon rows) -->
+        <div class="details-card">
+          <!-- Row: Username -->
+          <div class="detail-row">
+            <span class="row-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <div class="row-copy">
+              <span class="row-label">Username</span>
+              <span id="profile-username" class="row-value">emilys</span>
+            </div>
+          </div>
+
+          <!-- Row: Email Address -->
+          <div class="detail-row">
+            <span class="row-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="m3 7 9 6 9-6" />
+              </svg>
+            </span>
+            <div class="row-copy">
+              <span class="row-label">Email Address</span>
+              <span id="profile-email" class="row-value">
+                emily.johnson@x.dummyjson.com
+              </span>
+            </div>
+          </div>
+
+          <!-- Row: Password (masked with Show/Hide toggle) -->
+          <div class="detail-row">
+            <span class="row-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="11" width="16" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+            </span>
+            <div class="row-copy">
+              <span class="row-label">Password</span>
+              <div class="password-field">
+                <input type="password" id="profile-password" class="password-input" value="emilyspass" readonly>
+                <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row: Gender -->
+          <div class="detail-row">
+            <span class="row-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v10M8 10h8" />
+              </svg>
+            </span>
+            <div class="row-copy">
+              <span class="row-label">Gender</span>
+              <span id="profile-gender" class="row-value">Female</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destructive logout action (red, full-width) -->
+        <button class="logout-btn" onclick="logout()">Log Out</button>
+      </section>
+
+    </div><!-- /app-viewport -->
+
+    <!-- ============================================================
+         BOTTOM TAB NAVIGATION (3 fixed destinations)
+         Maps to: MainTabNavigator (React Navigation bottom-tabs)
+         Tabs: Home (home icon) ↔ Cart (cart icon + red badge) ↔ Profile
+         Active state: #2563EB blue | Inactive: #64748B slate
+         ============================================================ -->
+    <nav id="tab-bar" class="tab-bar hidden" aria-label="Bottom navigation">
+      <!-- Home Tab -->
+      <button class="tab-item active" data-tab="home" onclick="switchTab('home')">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 10l9-7 9 7v11a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
+          </svg>
+        </span>
+        <span class="tab-label">Home</span>
+      </button>
+
+      <!-- Cart Tab (with dynamic red badge for totalQuantity) -->
+      <button class="tab-item" data-tab="cart" onclick="switchTab('cart')">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 6h15l-1.6 9.4a1 1 0 0 1-1 .6H7.4a1 1 0 0 1-1-.8z" />
+            <path d="M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM17 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+            <path d="M4 3h2l2.4 11" />
+          </svg>
+          <!-- Red notification badge (absolute-positioned over icon) -->
+          <span id="cart-badge" class="tab-badge">0</span>
+        </span>
+        <span class="tab-label">Cart</span>
+      </button>
+
+      <!-- Profile Tab -->
+      <button class="tab-item" data-tab="profile" onclick="switchTab('profile')">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </span>
+        <span class="tab-label">Profile</span>
+      </button>
+    </nav>
+
+    <!-- Transient toast notification (add-to-cart / checkout feedback) -->
+    <div id="toast" class="toast"></div>
+
+  </div><!-- /device-shell -->
+
+  <!-- Prototype notice: instructs reviewer to test and approve -->
+  <div class="prototype-notice">
+    ✨ <strong>SDD Step 2 Prototype</strong> — myProducts (Huashu Design).
+    Test the full flow, then reply <strong>Approved</strong> to begin Step 3.
+  </div>
+
+  <!-- App controller: vanilla JS, zero dependencies -->
+  <script src="app.js"></script>
+</body>
+
+</html>
